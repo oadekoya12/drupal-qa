@@ -14,6 +14,8 @@ services:
       - "8083:80"  # Using port 8083 for Drupal
     volumes:
       - ./drupal:/opt/drupal
+      - ./optinclude:/opt/include # Mounting optinclude directory
+      - ./tests:/opt/tests        # Mounting tests directory
     environment:
       - DRUPAL_DB_HOST=db
       - DRUPAL_DB_NAME=drupal
