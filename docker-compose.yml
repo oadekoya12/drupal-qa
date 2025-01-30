@@ -12,8 +12,8 @@ services:
     container_name: drupal-qa-testing
     ports:
       - "8083:80"  # Using port 8083 for Drupal
-    # volumes:
-    #   - ./drupal:/opt/drupal
+    volumes:
+      - ./drupal:/opt/drupal
     environment:
       - DRUPAL_DB_HOST=db
       - DRUPAL_DB_NAME=drupal
@@ -21,6 +21,7 @@ services:
       - DRUPAL_DB_PASSWORD=drupal
     depends_on:
       - db
+    command: ["/bin/sh", "-c", ". /opt/include/compinstall.sh && apache2-foreground"]
 
   db:
     image: mariadb:10.5
