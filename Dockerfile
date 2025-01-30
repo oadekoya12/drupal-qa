@@ -23,11 +23,16 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN if ! getent group drupal; then groupadd -g $GUID drupal; fi && \
     if ! id -u drupal >/dev/null 2>&1; then useradd -m -u $UUID -g $GUID drupal; fi
 
-# Change ownership of the Drupal directory
-RUN chown -R drupal:drupal /var/www/html
+# Ensure correct ownership and permissions
+RUN chown -R drupal:drupal /var/www/html && \
+    mkdir -p /opt/drupal && \
+    chown -R drupal:drupal /opt/drupal
 
 # Switch to drupal user
 USER drupal
+
+# Run Composer install in the Drupal directory
+RUN composer install -d /opt/drupal
 
 # Copy custom modules, themes, or other files if needed
 # COPY ./custom_modules /var/www/html/modules/custom
