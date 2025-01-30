@@ -1,14 +1,17 @@
 # Use the official Drupal image from Docker Hub
-FROM drupal:10.0
+FROM drupal:10.4-php8.3-apache-bookworm
 
 # Set ARG and ENV for user IDs
 ARG UUID=1000
 ARG GUID=1000
 ENV UUID=$UUID
 ENV GUID=$GUID
+ENV GNAME="drupal"
+ENV UNAME="drupal"
+
 
 # Set working directory
-WORKDIR /var/www/html
+# WORKDIR /var/www/html
 
 # Install any additional dependencies if required as root
 USER root
@@ -21,7 +24,8 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Add drupal user and group if they don't exist
 RUN if ! getent group drupal; then groupadd -g $GUID drupal; fi && \
-    if ! id -u drupal >/dev/null 2>&1; then useradd -m -u $UUID -g $GUID drupal; fi
+    if ! id -u drupal > /dev/null 2>&1; then useradd -m -u $UUID -g $GUID drupal; fi
+
 
 # Ensure correct ownership and permissions
 RUN chown -R drupal:drupal /var/www/html && \
@@ -32,10 +36,12 @@ RUN chown -R drupal:drupal /var/www/html && \
 USER drupal
 
 # Run Composer install in the Drupal directory
-RUN composer install -d /opt/drupal
+# WORKDIR /var/www/html
+# RUN ls -al /var/www/html; 
+# RUN composer install --working-dir=..
 
-# Copy custom modules, themes, or other files if needed
-# COPY ./custom_modules /var/www/html/modules/custom
+# Set working directory for drupal user
+# WORKDIR /var/www/html
 
-# Set file permissions if needed
-# RUN chown -R www-data:www-data /var/www/html/modules/custom
+# Use CMD to ensure working directory is set correctly
+CMD ["apache2-foreground"]

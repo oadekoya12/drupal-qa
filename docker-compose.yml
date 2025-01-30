@@ -8,12 +8,12 @@ services:
       args:
         UUID: ${UUID}
         GUID: ${GUID}
-    image: drupal:10.0
+    image: drupal:10.4-php8.3-apache-bookworm
     container_name: drupal-qa-testing
     ports:
       - "8083:80"  # Using port 8083 for Drupal
-    volumes:
-      - ./drupal:/var/www/html
+    # volumes:
+    #   - ./drupal:/opt/drupal
     environment:
       - DRUPAL_DB_HOST=db
       - DRUPAL_DB_NAME=drupal
