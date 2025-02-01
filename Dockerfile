@@ -17,11 +17,31 @@ RUN apt-get update && apt-get install -y \
     default-mysql-client \
     curl \
     gnupg \
-    && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
-    && apt-get install -y nodejs
+    && curl -fsSL https://deb.nodesource.com/setup_23.x \
+        -o nodesource_setup.sh \
+    && bash nodesource_setup.sh \
+    && apt install -y nodejs
+
+RUN apt-get install libglib2.0-0\ 
+    libnss3\               
+    libnspr4\              
+    libdbus-1-3\           
+    libatk1.0-0\           
+    libatk-bridge2.0-0\    
+    libcups2\              
+    libxcomposite1\        
+    libxdamage1\           
+    libxfixes3\            
+    libxrandr2\            
+    libgbm1\               
+    libxkbcommon0\         
+    libpango-1.0-0\        
+    libcairo2\             
+    libasound2\            
+    libatspi2.0-0 
 
 # Install Playwright
-RUN npm install -g @playwright/test
+# RUN npm install -g @playwright/test
 
 # Set the ServerName directive globally
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
@@ -32,8 +52,8 @@ RUN if ! getent group drupal; then groupadd -g $GUID drupal; fi && \
 
 # Ensure correct ownership and permissions
 RUN chown -R drupal:drupal /var/www/html && \
-    mkdir -p /opt/drupal && \
-    chown -R drupal:drupal /opt/drupal
+    mkdir -p /opt/drupal /opt/tests /opt/include && \
+    chown -R drupal:drupal /opt
 
 # Switch to drupal user
 USER drupal

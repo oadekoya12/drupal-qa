@@ -11,11 +11,13 @@ services:
     image: drupal:10.4-php8.3-apache-bookworm
     container_name: drupal-qa-testing
     ports:
-      - "8083:80"  # Using port 8083 for Drupal
+      - "8083:80"  # Using port 8083 for Drupal on host and 80 inside container
     volumes:
       - ./drupal:/opt/drupal
       - ./optinclude:/opt/include # Mounting optinclude directory
       - ./tests:/opt/tests        # Mounting tests directory
+      - ./playwright.config.js:/opt/playwright.config.js  # Mapping config file
+      - ./test-results:/opt/test-results  # Mounting test results directory
     environment:
       - DRUPAL_DB_HOST=db
       - DRUPAL_DB_NAME=drupal

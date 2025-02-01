@@ -1,0 +1,3 @@
+docker exec -it drupal-qa-testing npx playwright test /opt/tests
+
+tree -I drupal -l -v 1 .
