@@ -4,59 +4,58 @@ FROM drupal:10.4-php8.3-apache-bookworm
 # Set ARG and ENV for user IDs
 ARG UUID=1000
 ARG GUID=1000
-ENV UUID=$UUID
-ENV GUID=$GUID
+ENV UUID=${UUID}
+ENV GUID=${GUID}
 ENV GNAME="drupal"
 ENV UNAME="drupal"
 
-# Install any additional dependencies if required as root
+# Install dependencies as root
 USER root
+
+# Install system tools and Node.js
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     default-mysql-client \
     curl \
     gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_23.x \
-        -o nodesource_setup.sh \
-    && bash nodesource_setup.sh \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt install -y nodejs
 
-RUN apt-get install libglib2.0-0\ 
-    libnss3\               
-    libnspr4\              
-    libdbus-1-3\           
-    libatk1.0-0\           
-    libatk-bridge2.0-0\    
-    libcups2\              
-    libxcomposite1\        
-    libxdamage1\           
-    libxfixes3\            
-    libxrandr2\            
-    libgbm1\               
-    libxkbcommon0\         
-    libpango-1.0-0\        
-    libcairo2\             
-    libasound2\            
-    libatspi2.0-0 
+# Install Playwright dependencies
+RUN apt-get install -y \
+    libglib2.0-0 \
+    libnss3 \
+    libnspr4 \
+    libdbus-1-3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libxkbcommon0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libatspi2.0-0
 
-# Install Playwright
-# RUN npm install -g @playwright/test
-
-# Set the ServerName directive globally
+# Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Add drupal user and group if they don't exist
-RUN if ! getent group drupal; then groupadd -g $GUID drupal; fi && \
-    if ! id -u drupal > /dev/null 2>&1; then useradd -m -u $UUID -g $GUID drupal; fi
+# Create drupal user/group if they don't exist
+RUN if ! getent group ${GNAME} > /dev/null; then groupadd -g ${GUID} ${GNAME}; fi \
+    && if ! id -u ${UNAME} > /dev/null 2>&1; then useradd -m -u ${UUID} -g ${GUID} ${UNAME}; fi
 
-# Ensure correct ownership and permissions
-RUN chown -R drupal:drupal /var/www/html && \
-    mkdir -p /opt/drupal /opt/tests /opt/include && \
-    chown -R drupal:drupal /opt
+# Set permissions for Drupal and /opt directories
+RUN chown -R ${UNAME}:${GNAME} /var/www/html \
+    && mkdir -p /opt/drupal /opt/tests /opt/include \
+    && chown -R ${UNAME}:${GNAME} /opt
 
-# Switch to drupal user
-USER drupal
+# Switch to non-root user
+USER ${UNAME}
 
-# Use CMD to ensure working directory is set correctly
+# Start Apache in the foreground
 CMD ["apache2-foreground"]

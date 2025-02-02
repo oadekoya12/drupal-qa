@@ -1,56 +1,100 @@
 version: '3.8'
 
 services:
+  # Drupal Service
   drupal:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        UUID: ${UUID}
-        GUID: ${GUID}
+        UUID: ${UUID:-1000}  # Default UID is 1000 if not provided
+        GUID: ${GUID:-1000}  # Default GID is 1000 if not provided
     image: drupal:10.4-php8.3-apache-bookworm
     container_name: drupal-qa-testing
     ports:
-      - "8083:80"  # Using port 8083 for Drupal on host and 80 inside container
+      - "8950:80"  # Host port 8950 mapped to container port 80
     volumes:
-      - ./drupal:/opt/drupal
-      - ./optinclude:/opt/include # Mounting optinclude directory
-      - ./tests:/opt/tests        # Mounting tests directory
-      - ./playwright.config.js:/opt/playwright.config.js  # Mapping config file
-      - ./test-results:/opt/test-results  # Mounting test results directory
+      - ./drupal:/opt/drupal  # Mount local drupal directory
+      - ./optinclude:/opt/include  # Mount directory with compinstall.sh
+      - ./tests:/opt/tests  # Mount tests directory
     environment:
-      - DRUPAL_DB_HOST=db
-      - DRUPAL_DB_NAME=drupal
-      - DRUPAL_DB_USER=drupal
-      - DRUPAL_DB_PASSWORD=drupal
+      - DRUPAL_DB_HOST=db  # MariaDB service name
+      - DRUPAL_DB_NAME=drupal  # Database name
+      - DRUPAL_DB_USER=drupal  # Database user
+      - DRUPAL_DB_PASSWORD=drupal  # Database password
+      - ELASTICSEARCH_HOST=elasticsearch  # Elasticsearch service name
+      - ELASTICSEARCH_PORT=9200  # Elasticsearch port
     depends_on:
       - db
+      - elasticsearch  # Start Elasticsearch first
+    networks:
+      - drupal_network
+    # Run compinstall.sh before starting Apache
     command: ["/bin/sh", "-c", ". /opt/include/compinstall.sh && apache2-foreground"]
 
+  # MariaDB Service
   db:
     image: mariadb:10.5
     container_name: mariadb
     ports:
-      - "3310:3306"  # Using port 3310 for MariaDB
+      - "8949:3306"  # Host port 8949 mapped to container port 3306
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=drupal
-      - MYSQL_USER=drupal
-      - MYSQL_PASSWORD=drupal
+      - MYSQL_ROOT_PASSWORD=rootpassword  # Root password
+      - MYSQL_DATABASE=drupal  # Database name
+      - MYSQL_USER=drupal  # Database user
+      - MYSQL_PASSWORD=drupal  # Database password
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql  # Persistent data
+    networks:
+      - drupal_network
 
+  # phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
     ports:
-      - "8085:80"  # Using port 8085 for PHPMyAdmin
+      - "8948:80"  # Host port 8948 mapped to container port 80
     environment:
-      - PMA_HOST=db
-      - PMA_USER=drupal
-      - PMA_PASSWORD=drupal
+      - PMA_HOST=db  # MariaDB service name
+      - PMA_USER=drupal  # Database user
+      - PMA_PASSWORD=drupal  # Database password
     depends_on:
-      - db
+      - db  # Start MariaDB first
+    networks:
+      - drupal_network
 
+  # Elasticsearch Service
+  elasticsearch:
+    image: elasticsearch:8.17.1  # Specific version for stability
+    container_name: elasticsearch
+    ports:
+      - "8947:9200"  # Host port 8947 mapped to container port 9200 (HTTP)
+      - "8946:9300"  # Host port 8946 mapped to container port 9300 (Cluster)
+    environment:
+      - discovery.type=single-node  # Single-node setup
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # Memory limits
+      - xpack.security.enabled=false  # Disable security for simplicity
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data  # Persistent data
+    networks:
+      - drupal_network
+
+  # Playwright Service
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.24.1-focal
+    container_name: playwright-testing
+    volumes:
+      - ./tests:/tests
+      - ./playwright.config.js:/playwright.config.js
+      - ./test-results:/test-results
+    entrypoint: ["/bin/sh", "-c", "npx playwright test"]
+
+# Volumes for persistent data
 volumes:
-  db_data:
+  db_data:  # MariaDB data
+  elasticsearch_data:  # Elasticsearch data
+
+# Shared network for all services
+networks:
+  drupal_network:
+    driver: bridge
