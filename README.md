@@ -1,7 +1,7 @@
 # Drupal QA Testing Project
 
 ## Project Overview
-This project is designed to set up an environment for testing and developing a Drupal website. It includes services for Drupal, a MariaDB database, and PHPMyAdmin for database management. The primary focus is on ensuring excellence through automated and manual QA testing for Drupal projects.
+This project is designed to set up an environment for testing and developing a Drupal website. It includes services for Drupal, a MariaDB database, PHPMyAdmin for database management, Elasticsearch for search functionality, an Angular front-end, and Allure Report for displaying test results. The primary focus is on ensuring excellence through automated and manual QA testing for Drupal projects.
 
 ## Project Structure
     ```Tree
@@ -9,13 +9,26 @@ This project is designed to set up an environment for testing and developing a D
     ├── Dockerfile 
     ├── docker-compose.yml
     ├── script.sh
-    └── drupal/
+    ├── drupal/
+    ├── settings/
+    │   └── settings.php
+    ├── optinclude/
+    │   └── compinstall.sh
+    ├── tests/
+    │   └── example.spec.js
+    ├── playwright.config.js
+    └── LICENSE
+
     ```
 
 ### Services
 - **Drupal:** A CMS platform for building and managing websites.
 - **MariaDB:** A relational database management system.
 - **PHPMyAdmin:** A web-based database management tool for MariaDB.
+- **Elasticsearch:** A search and analytics engine.
+- **Playwright:** Automated testing framework.
+- **Allure Report:** Framework for test result reporting.
+- **Angular Front-end:** Front-end framework for building user interfaces.
 
 ### Getting Started
 #### Prerequisites
@@ -36,27 +49,49 @@ This project is designed to set up an environment for testing and developing a D
     ```sh
     ./script.sh
     ```
+    - **To build without using the cache, run:**
+    ```sh
+    ./script.sh --no-cache
+    ```
 ### Accessing Services
-- Drupal: Visit http://localhost:8083
-- PHPMyAdmin: Visit http://localhost:8085
-- MariaDB: Available on port 3310
+- Drupal: Visit http://localhost:8950
+- PHPMyAdmin: Visit http://localhost:8948
+- MariaDB: Available on port 8949
+- Elasticsearch: Visit http://localhost:8947
+- Angular Front-end: Visit http://localhost:8951
+- Allure Report: Visit http://localhost:8952
 
 ### Environment Variables
 The environment variables are defined in the docker-compose.yml file:
+- **Drupal Service:**
 - DRUPAL_DB_HOST=db
 - DRUPAL_DB_NAME=drupal
 - DRUPAL_DB_USER=drupal
 - DRUPAL_DB_PASSWORD=drupal
+- ELASTICSEARCH_HOST=elasticsearch
+- ELASTICSEARCH_PORT=9200
+
+- **MariaDB Service:**
 - MYSQL_ROOT_PASSWORD=rootpassword
 - MYSQL_DATABASE=drupal
 - MYSQL_USER=drupal
 - MYSQL_PASSWORD=drupal
+
+- **phpMyAdmin Service:**
 - PMA_HOST=db
 - PMA_USER=drupal
 - PMA_PASSWORD=drupal
 
 ### Running Tests
 - Automated Tests: Set up and run Playwright tests for various scenarios.
+    - **Run Playwright Tests:**
+    ```sh
+    docker exec -it drupal-qa-testing npx playwright test
+    ```
+    - **Generate Allure Reports:**
+    ```sh
+    npx allure generate allure-results --clean -o allure-report
+    ```
 - Manual Tests: Perform manual testing for user registration, content creation, user role management, form validation, and accessibility.
 
 ## Contribution Guidelines

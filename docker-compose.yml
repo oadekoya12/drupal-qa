@@ -17,6 +17,7 @@ services:
       - ./drupal:/opt/drupal  # Mount local drupal directory
       - ./optinclude:/opt/include  # Mount directory with compinstall.sh
       - ./tests:/opt/tests  # Mount tests directory
+      - ./allure-results:/allure-results  # Mount Allure results directory
     environment:
       - DRUPAL_DB_HOST=db  # MariaDB service name
       - DRUPAL_DB_NAME=drupal  # Database name
@@ -32,7 +33,26 @@ services:
     # Run compinstall.sh before starting Apache
     command: ["/bin/sh", "-c", ". /opt/include/compinstall.sh && apache2-foreground"]
 
-  # MariaDB Service
+  # Playwright Service
+  playwright:
+    build:
+      context: ./playwright
+      dockerfile: Dockerfile
+      args:
+        UUID: ${UUID:-1000}  # Default UID is 1000 if not provided
+        GUID: ${GUID:-1000}  # Default GID is 1000 if not provided
+    container_name: playwright-testing
+    volumes:
+      - ./tests:/tests
+      - ./playwright/playwright.config.js:/tests/playwright.config.js
+      - ./allure-results:/allure-results
+    networks:
+      - drupal_network
+    depends_on:
+      - drupal  # Ensure Drupal is started first
+    entrypoint: ["/bin/sh", "-c", "tail -f /dev/null && npm install && npx playwright install && npx playwright test"]
+
+  # Other services remain unchanged
   db:
     image: mariadb:10.5
     container_name: mariadb
@@ -48,7 +68,6 @@ services:
     networks:
       - drupal_network
 
-  # phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
@@ -63,9 +82,8 @@ services:
     networks:
       - drupal_network
 
-  # Elasticsearch Service
   elasticsearch:
-    image: elasticsearch:8.17.1  # Specific version for stability
+    image: elasticsearch:8.17.1  # Updated to the specified version
     container_name: elasticsearch
     ports:
       - "8947:9200"  # Host port 8947 mapped to container port 9200 (HTTP)
@@ -79,15 +97,35 @@ services:
     networks:
       - drupal_network
 
-  # Playwright Service
-  playwright:
-    image: mcr.microsoft.com/playwright:v1.24.1-focal
-    container_name: playwright-testing
+  allure:
+    build:
+      context: ./allure
+      dockerfile: Dockerfile
+      args:
+        UUID: ${UUID:-1000}  # Default UID is 1000 if not provided
+        GUID: ${GUID:-1000}  # Default GID is 1000 if not provided
+    container_name: allure-report
+    ports:
+      - "8952:4040"  # Host port 8952 mapped to container port 4040
     volumes:
-      - ./tests:/tests
-      - ./playwright.config.js:/playwright.config.js
-      - ./test-results:/test-results
-    entrypoint: ["/bin/sh", "-c", "npx playwright test"]
+      - ./allure-results:/allure-results  # Mount Allure results directory
+    networks:
+      - drupal_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        UUID: ${UUID:-1000}  # Default UID is 1000 if not provided
+        GUID: ${GUID:-1000}  # Default GID is 1000 if not provided
+    container_name: angular-frontend
+    ports:
+      - "8951:80"  # Host port 8951 mapped to container port 80
+    networks:
+      - drupal_network
+    depends_on:
+      - elasticsearch  # Ensure Elasticsearch is started first
 
 # Volumes for persistent data
 volumes:

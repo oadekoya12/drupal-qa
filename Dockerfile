@@ -22,26 +22,6 @@ RUN apt-get update && apt-get install -y \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt install -y nodejs
 
-# Install Playwright dependencies
-RUN apt-get install -y \
-    libglib2.0-0 \
-    libnss3 \
-    libnspr4 \
-    libdbus-1-3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libxkbcommon0 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    libatspi2.0-0
-
 # Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
@@ -51,8 +31,8 @@ RUN if ! getent group ${GNAME} > /dev/null; then groupadd -g ${GUID} ${GNAME}; f
 
 # Set permissions for Drupal and /opt directories
 RUN chown -R ${UNAME}:${GNAME} /var/www/html \
-    && mkdir -p /opt/drupal /opt/tests /opt/include \
-    && chown -R ${UNAME}:${GNAME} /opt
+    && mkdir -p /opt/drupal /opt/tests /opt/include /allure-results \
+    && chown -R ${UNAME}:${GNAME} /opt /allure-results 
 
 # Switch to non-root user
 USER ${UNAME}
